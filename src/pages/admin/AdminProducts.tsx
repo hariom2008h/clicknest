@@ -12,9 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { Tables } from '@/integrations/supabase/types';
+import type { Tables, Enums } from '@/integrations/supabase/types';
 
 type Product = Tables<'products'>;
+type ProductType = Enums<'product_type'>;
 
 function slugify(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -153,8 +154,6 @@ function ProductForm({
   categories: Tables<'categories'>[];
   onSaved: () => void;
 }) {
-  const { user } = (await import('@/hooks/use-auth')).useAuth ? { user: null } : { user: null };
-  // Use a simpler approach - import at top level
   const [title, setTitle] = useState(product?.title ?? '');
   const [shortDesc, setShortDesc] = useState(product?.short_description ?? '');
   const [description, setDescription] = useState(product?.description ?? '');
@@ -162,7 +161,7 @@ function ProductForm({
   const [coverUrl, setCoverUrl] = useState(product?.cover_image_url ?? '');
   const [fileUrl, setFileUrl] = useState(product?.file_url ?? '');
   const [categoryId, setCategoryId] = useState(product?.category_id ?? '');
-  const [productType, setProductType] = useState(product?.product_type ?? 'ebook');
+  const [productType, setProductType] = useState<ProductType>(product?.product_type ?? 'ebook');
   const [published, setPublished] = useState(product?.published ?? false);
   const [featured, setFeatured] = useState(product?.featured ?? false);
   const [saving, setSaving] = useState(false);
@@ -181,7 +180,7 @@ function ProductForm({
         cover_image_url: coverUrl || null,
         file_url: fileUrl || null,
         category_id: categoryId || null,
-        product_type: productType as any,
+        product_type: productType,
         published,
         featured,
       };
@@ -193,7 +192,7 @@ function ProductForm({
       } else {
         const { error } = await supabase.from('products').insert({
           ...payload,
-          seller_id: '00000000-0000-0000-0000-000000000000', // admin placeholder
+          seller_id: '00000000-0000-0000-0000-000000000000',
         });
         if (error) throw error;
         toast.success('Product created');
@@ -227,7 +226,7 @@ function ProductForm({
         </div>
         <div>
           <Label>Product Type</Label>
-          <Select value={productType} onValueChange={(v) => setProductType(v)}>
+          <Select value={productType} onValueChange={(v) => setProductType(v as ProductType)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="ebook">E-book</SelectItem>
@@ -240,7 +239,7 @@ function ProductForm({
       </div>
       <div>
         <Label>Category</Label>
-        <Select value={categoryId} onValueChange={setCategoryId}>
+        <Select value={categoryId ?? ''} onValueChange={setCategoryId}>
           <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
           <SelectContent>
             {categories.map((c) => (
