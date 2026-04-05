@@ -4,7 +4,8 @@ import { useAuth } from '@/hooks/use-auth';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Badge } from '@/components/ui/badge';
-import { Navigate } from 'react-router-dom';
+import { SignInButton } from '@clerk/clerk-react';
+import { Button } from '@/components/ui/button';
 
 export default function Orders() {
   const { user, loading: authLoading } = useAuth();
@@ -22,7 +23,21 @@ export default function Orders() {
     enabled: !!user,
   });
 
-  if (!authLoading && !user) return <Navigate to="/auth" />;
+  if (!authLoading && !user) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-20">
+          <h1 className="font-heading text-2xl font-bold text-foreground">Sign in to view orders</h1>
+          <p className="mt-2 text-muted-foreground">You need an account to track your purchases</p>
+          <SignInButton mode="modal">
+            <Button className="mt-6">Sign In</Button>
+          </SignInButton>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
