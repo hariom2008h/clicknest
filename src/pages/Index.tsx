@@ -64,16 +64,13 @@ export default function Index() {
               <span className="text-gradient-hero">Instantly Delivered</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-              Discover courses, e-books, software, and creative assets from independent creators. Buy once, own forever.
+              Discover courses, e-books, software, and creative assets. Buy once, own forever.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
+            <div className="mt-8">
               <Link to="/products">
                 <Button size="lg" className="bg-gradient-accent text-accent-foreground shadow-elevated hover:opacity-90 transition-opacity">
                   Browse Products <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
-              </Link>
-              <Link to="/auth">
-                <Button size="lg" variant="outline">Start Selling</Button>
               </Link>
             </div>
           </div>
@@ -86,7 +83,7 @@ export default function Index() {
           {[
             { icon: Zap, title: 'Instant Delivery', desc: 'Download your purchases immediately after checkout.' },
             { icon: Shield, title: 'Secure Payments', desc: 'All transactions secured with industry-standard encryption.' },
-            { icon: Sparkles, title: 'Quality Guaranteed', desc: 'Curated products from vetted independent creators.' },
+            { icon: Sparkles, title: 'Quality Guaranteed', desc: 'Curated premium digital products.' },
           ].map(({ icon: Icon, title, desc }) => (
             <div key={title} className="flex gap-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10">
@@ -152,7 +149,7 @@ export default function Index() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-heading text-3xl font-bold text-foreground">Latest Products</h2>
-                <p className="mt-2 text-muted-foreground">Fresh from our creators</p>
+                <p className="mt-2 text-muted-foreground">Fresh additions</p>
               </div>
               <Link to="/products">
                 <Button variant="ghost">View all <ArrowRight className="ml-1 h-4 w-4" /></Button>
@@ -175,23 +172,6 @@ export default function Index() {
           </div>
         </section>
       )}
-
-      {/* CTA */}
-      <section className="bg-gradient-hero py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="font-heading text-3xl font-bold text-primary-foreground md:text-4xl">
-            Ready to start selling?
-          </h2>
-          <p className="mt-4 text-lg text-primary-foreground/70">
-            Join thousands of creators earning from their digital products.
-          </p>
-          <Link to="/auth">
-            <Button size="lg" variant="secondary" className="mt-8">
-              Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
-      </section>
 
       <Footer />
     </div>

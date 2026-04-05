@@ -4,18 +4,12 @@ import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/cart-store';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 
 export default function Cart() {
   const { items, removeItem, clearCart, total } = useCartStore();
-  const { user } = useAuth();
 
   const handleCheckout = () => {
-    if (!user) {
-      toast.error('Please sign in to checkout');
-      return;
-    }
     toast.info('Stripe checkout will be integrated next!');
   };
 
