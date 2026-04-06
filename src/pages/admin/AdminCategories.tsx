@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useUser } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,18 @@ function slugify(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
+async function adminCategoryRequest(userId: string, action: string, payload?: any) {
+  const response = await supabase.functions.invoke('admin-categories', {
+    body: { action, payload },
+    headers: { 'x-custom-auth': userId },
+  });
+  if (response.error) throw new Error(response.error.message);
+  if (response.data?.error) throw new Error(response.data.error);
+  return response.data?.data;
+}
+
 export default function AdminCategories() {
+  const { user } = useUser();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -25,16 +37,16 @@ export default function AdminCategories() {
   const { data: categories, isLoading } = useQuery({
     queryKey: ['admin-categories'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('categories').select('*').order('name');
-      if (error) throw error;
-      return data;
+      if (!user?.id) return [];
+      return adminCategoryRequest(user.id, 'list');
     },
+    enabled: !!user?.id,
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('categories').delete().eq('id', id);
-      if (error) throw error;
+      if (!user?.id) throw new Error('Not authenticated');
+      await adminCategoryRequest(user.id, 'delete', { id });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
@@ -61,9 +73,10 @@ export default function AdminCategories() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user?.id) return;
     setSaving(true);
     try {
-      const payload = {
+      const catData = {
         name,
         slug: slugify(name),
         description: description || null,
@@ -71,12 +84,10 @@ export default function AdminCategories() {
       };
 
       if (editing) {
-        const { error } = await supabase.from('categories').update(payload).eq('id', editing.id);
-        if (error) throw error;
+        await adminCategoryRequest(user.id, 'update', { id: editing.id, data: catData });
         toast.success('Category updated');
       } else {
-        const { error } = await supabase.from('categories').insert(payload);
-        if (error) throw error;
+        await adminCategoryRequest(user.id, 'create', catData);
         toast.success('Category created');
       }
       setDialogOpen(false);
@@ -132,7 +143,7 @@ export default function AdminCategories() {
         </div>
       ) : (
         <div className="mt-8 space-y-3">
-          {categories?.map((cat) => (
+          {categories?.map((cat: any) => (
             <div key={cat.id} className="flex items-center justify-between rounded-lg border bg-card p-4">
               <div>
                 <p className="font-heading font-semibold text-foreground">{cat.name}</p>
