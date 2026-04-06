@@ -4,7 +4,8 @@ const ADMIN_EMAIL = "hariombhadana795@gmail.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-custom-auth, content-type, apikey, x-client-info",
+  "Access-Control-Allow-Headers":
+    "authorization, x-custom-auth, content-type, apikey, x-client-info",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -12,12 +13,10 @@ async function verifyAdmin(req: Request): Promise<boolean> {
   const authHeader = req.headers.get("x-custom-auth");
   if (!authHeader) return false;
 
-  // Verify with Clerk backend API
   const clerkSecret = Deno.env.get("CLERK_SECRET_KEY");
   if (!clerkSecret) return false;
 
   try {
-    // authHeader contains the Clerk user ID
     const res = await fetch(`https://api.clerk.com/v1/users/${authHeader}`, {
       headers: { Authorization: `Bearer ${clerkSecret}` },
     });
@@ -50,28 +49,35 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  const { action, payload } = await req.json();
+  const { action, id, data: payload } = await req.json();
 
   try {
     let data, error;
 
     switch (action) {
       case "list":
-        ({ data, error } = await supabase.from("categories").select("*").order("name"));
+        ({ data, error } = await supabase
+          .from("products")
+          .select("*, categories(name)")
+          .order("created_at", { ascending: false }));
         break;
       case "create":
-        ({ data, error } = await supabase.from("categories").insert(payload).select().single());
+        ({ data, error } = await supabase
+          .from("products")
+          .insert({ ...payload, seller_id: "00000000-0000-0000-0000-000000000000" })
+          .select("*, categories(name)")
+          .single());
         break;
       case "update":
         ({ data, error } = await supabase
-          .from("categories")
-          .update(payload.data)
-          .eq("id", payload.id)
-          .select()
+          .from("products")
+          .update(payload)
+          .eq("id", id)
+          .select("*, categories(name)")
           .single());
         break;
       case "delete":
-        ({ error } = await supabase.from("categories").delete().eq("id", payload.id));
+        ({ error } = await supabase.from("products").delete().eq("id", id));
         break;
       default:
         return new Response(JSON.stringify({ error: "Invalid action" }), {

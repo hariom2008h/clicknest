@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useUser } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -21,25 +22,30 @@ function slugify(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
+async function adminProductRequest(userId: string, action: string, id?: string, data?: any) {
+  const response = await supabase.functions.invoke('admin-products', {
+    body: { action, id, data },
+    headers: { 'x-custom-auth': userId },
+  });
+  if (response.error) throw new Error(response.error.message);
+  if (response.data?.error) throw new Error(response.data.error);
+  return response.data?.data;
+}
+
 export default function AdminProducts() {
+  const { user } = useUser();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['admin-products'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*, categories(name)')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => adminProductRequest(user!.id, 'list'),
+    enabled: !!user?.id,
   });
 
   const { data: categories } = useQuery({
-    queryKey: ['categories'],
+    queryKey: ['admin-categories-for-products'],
     queryFn: async () => {
       const { data, error } = await supabase.from('categories').select('*');
       if (error) throw error;
@@ -48,10 +54,7 @@ export default function AdminProducts() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('products').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => adminProductRequest(user!.id, 'delete', id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
       toast.success('Product deleted');
@@ -77,6 +80,7 @@ export default function AdminProducts() {
             <ProductForm
               product={editing}
               categories={categories ?? []}
+              userId={user?.id ?? ''}
               onSaved={() => {
                 setDialogOpen(false);
                 setEditing(null);
@@ -95,7 +99,7 @@ export default function AdminProducts() {
         </div>
       ) : (
         <div className="mt-8 space-y-3">
-          {products?.map((p) => (
+          {products?.map((p: any) => (
             <div key={p.id} className="flex items-center gap-4 rounded-lg border bg-card p-4">
               <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted">
                 {p.cover_image_url ? (
@@ -117,20 +121,10 @@ export default function AdminProducts() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => { setEditing(p); setDialogOpen(true); }}
-                >
+                <Button variant="ghost" size="icon" onClick={() => { setEditing(p); setDialogOpen(true); }}>
                   <Pencil className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    if (confirm('Delete this product?')) deleteMutation.mutate(p.id);
-                  }}
-                >
+                <Button variant="ghost" size="icon" onClick={() => { if (confirm('Delete this product?')) deleteMutation.mutate(p.id); }}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
@@ -148,10 +142,12 @@ export default function AdminProducts() {
 function ProductForm({
   product,
   categories,
+  userId,
   onSaved,
 }: {
   product: Product | null;
   categories: Tables<'categories'>[];
+  userId: string;
   onSaved: () => void;
 }) {
   const [title, setTitle] = useState(product?.title ?? '');
@@ -172,8 +168,7 @@ function ProductForm({
     try {
       const slug = slugify(title);
       const payload = {
-        title,
-        slug,
+        title, slug,
         short_description: shortDesc || null,
         description: description || null,
         price: parseFloat(price) || 0,
@@ -181,20 +176,14 @@ function ProductForm({
         file_url: fileUrl || null,
         category_id: categoryId || null,
         product_type: productType,
-        published,
-        featured,
+        published, featured,
       };
 
       if (product) {
-        const { error } = await supabase.from('products').update(payload).eq('id', product.id);
-        if (error) throw error;
+        await adminProductRequest(userId, 'update', product.id, payload);
         toast.success('Product updated');
       } else {
-        const { error } = await supabase.from('products').insert({
-          ...payload,
-          seller_id: '00000000-0000-0000-0000-000000000000',
-        });
-        if (error) throw error;
+        await adminProductRequest(userId, 'create', undefined, payload);
         toast.success('Product created');
       }
       onSaved();
