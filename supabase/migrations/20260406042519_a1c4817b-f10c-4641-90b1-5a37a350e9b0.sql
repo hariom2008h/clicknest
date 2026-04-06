@@ -1,0 +1,2 @@
+ALTER TABLE public.products DROP CONSTRAINT products_seller_id_fkey;
+ALTER TABLE public.products ALTER COLUMN seller_id SET DEFAULT '00000000-0000-0000-0000-000000000000';

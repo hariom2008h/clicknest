@@ -141,7 +141,7 @@ export type Database = {
           price?: number
           product_type?: Database["public"]["Enums"]["product_type"]
           published?: boolean
-          seller_id: string
+          seller_id?: string
           short_description?: string | null
           slug: string
           title: string
