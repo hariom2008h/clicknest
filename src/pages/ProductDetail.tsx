@@ -60,13 +60,13 @@ export default function ProductDetail() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <div className="container mx-auto flex-1 px-4 py-10">
-        <div className="grid gap-10 lg:grid-cols-2">
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-10">
           {/* Image */}
-          <div className="overflow-hidden rounded-2xl border bg-muted">
+          <div className="overflow-hidden rounded-2xl border bg-muted aspect-square max-h-[500px]">
             {product.cover_image_url ? (
               <img src={product.cover_image_url} alt={product.title} className="h-full w-full object-cover" loading="lazy" />
             ) : (
-              <div className="flex aspect-square items-center justify-center bg-gradient-hero">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-hero">
                 <span className="font-heading text-6xl font-bold text-primary-foreground/50">{product.title[0]}</span>
               </div>
             )}
