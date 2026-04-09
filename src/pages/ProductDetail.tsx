@@ -111,7 +111,7 @@ export default function ProductDetail() {
             {product.description && (
               <div className="mt-10">
                 <h2 className="font-heading text-xl font-semibold text-foreground">Description</h2>
-                <div className="prose prose-sm mt-4 text-muted-foreground max-w-none whitespace-pre-wrap">
+                <div className="prose prose-sm mt-4 text-muted-foreground max-w-none whitespace-pre-wrap break-words overflow-hidden">
                   {product.description}
                 </div>
               </div>
